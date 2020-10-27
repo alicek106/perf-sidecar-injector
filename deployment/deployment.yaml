@@ -1,7 +1,9 @@
+# process namespace share가 활성화되어 있어야만 사용 가능, EKS에서는 기본적으로 활성화 되어 있음
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: perf-sidecar-injector-webhook-deployment
+  namespace: default
   labels:
     app: perf-sidecar-injector
 spec:
@@ -15,26 +17,26 @@ spec:
         app: perf-sidecar-injector
     spec:
       containers:
-        - name: perf-sidecar-injector
-          image: bpradipt/perf-sidecar-injector:v1
-          imagePullPolicy: IfNotPresent
-          args:
-            - -sidecarCfgFile=/etc/webhook/config/sidecarconfig.yaml
-            - -tlsCertFile=/etc/webhook/certs/cert.pem
-            - -tlsKeyFile=/etc/webhook/certs/key.pem
-            - -alsologtostderr
-            - -v=4
-            - 2>&1
-          volumeMounts:
-            - name: webhook-certs
-              mountPath: /etc/webhook/certs
-              readOnly: true
-            - name: webhook-config
-              mountPath: /etc/webhook/config
-      volumes:
+      - name: perf-sidecar-injector
+        image: alicek106/perf-sidecar-injector
+        imagePullPolicy: IfNotPresent
+        args:
+        - -sidecarCfgFile=/etc/webhook/config/sidecarconfig.yaml
+        - -tlsCertFile=/etc/webhook/certs/cert.pem
+        - -tlsKeyFile=/etc/webhook/certs/key.pem
+        - -alsologtostderr
+        - -v=4
+        - 2>&1
+        volumeMounts:
         - name: webhook-certs
-          secret:
-            secretName: perf-sidecar-injector-webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
         - name: webhook-config
-          configMap:
-            name: perf-sidecar-injector-webhook-configmap
+          mountPath: /etc/webhook/config
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: perf-sidecar-injector-webhook-certs
+      - name: webhook-config
+        configMap:
+          name: perf-sidecar-injector-webhook-configmap
